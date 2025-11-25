@@ -28,10 +28,20 @@ app.get('/api/photos', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`
-    SYSTEM ONLINE...
-    TERMINAL ACCESS: http://localhost:${PORT}
-    LOAD PHOTOS INTO: /public/photos/
-    `);
-});
+// ...前面的代码保持不变...
+
+// 修改底部启动逻辑
+const PORT = process.env.PORT || 3000;
+
+// 只有在本地直接运行时才启动监听（为了兼容本地开发）
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`
+        SYSTEM ONLINE...
+        TERMINAL ACCESS: http://localhost:${PORT}
+        `);
+    });
+}
+
+// 必须导出 app，这一步是为了 Vercel
+module.exports = app;
