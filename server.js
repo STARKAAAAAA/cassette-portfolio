@@ -3,33 +3,38 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-// 修正：合并 PORT 定义，优先使用环境变量（适配 Vercel），本地则用 3000
 const PORT = process.env.PORT || 3000;
 
-// 设置静态文件目录
-app.use(express.static('public'));
+// 【修复点 1】使用绝对路径定义 public 目录
+// Vercel 环境下，相对路径 '.' 有时会找不到，必须用 __dirname 拼接
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
+
+// 【修复点 2】显式添加根路由
+// 如果 express.static 没生效，这个路由会强制发送 index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+});
 
 // API Endpoint: 获取照片列表
 app.get('/api/photos', (req, res) => {
-    const photoDir = path.join(__dirname, 'public', 'photos');
+    const photoDir = path.join(publicPath, 'photos');
     
     // 确保目录存在
     if (!fs.existsSync(photoDir)){
         try {
             fs.mkdirSync(photoDir);
         } catch (e) {
-            // 在 Vercel 等只读环境可能会报错，但这通常不影响读取，忽略即可
             console.log('Skipping mkdir in readonly env');
         }
     }
 
     fs.readdir(photoDir, (err, files) => {
         if (err) {
-            console.error(err);
-            // 如果文件夹不存在或无法读取，返回空数组防止前端崩坏
+            console.error("Error reading photo dir:", err);
             return res.json([]); 
         }
-        // 过滤文件，只保留图片
+        
         const images = files.filter(file => 
             ['.jpg', '.jpeg', '.png', '.gif', '.webp'].includes(path.extname(file).toLowerCase())
         );
@@ -37,18 +42,11 @@ app.get('/api/photos', (req, res) => {
     });
 });
 
-// 核心修正点：
-// 只有在本地直接运行时（node server.js）才启动监听
-// Vercel 会自动处理监听，不需要这里的 app.listen
+// 本地启动监听
 if (require.main === module) {
     app.listen(PORT, () => {
-        console.log(`
-        SYSTEM ONLINE...
-        TERMINAL ACCESS: http://localhost:${PORT}
-        LOAD PHOTOS INTO: /public/photos/
-        `);
+        console.log(`System Online at http://localhost:${PORT}`);
     });
 }
 
-// 必须导出 app 实例供 Vercel 使用
 module.exports = app;
