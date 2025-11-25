@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentIndex = index;
         const filename = photos[index];
         
-        // 更新高亮状态
+        // 更新高亮
         const items = photoList.querySelectorAll('li');
         items.forEach(i => i.classList.remove('active'));
         if(items[index]) items[index].classList.add('active');
@@ -61,12 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
         emptyState.style.display = 'none';
         mainImage.style.display = 'block';
         mainImage.src = `/photos/${filename}`;
-        
-        // 模拟加载闪烁 (只改变不透明度，不影响画质)
         mainImage.style.opacity = 0.5;
         setTimeout(() => mainImage.style.opacity = 1, 100);
 
-        // 更新元数据
+        // 元数据
         const imgObj = new Image();
         imgObj.src = `/photos/${filename}`;
         imgObj.onload = function() {
@@ -78,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- 控制逻辑暴露给全局 ---
+    // --- 全局控制 ---
 
     window.prevPhoto = () => {
         let newIndex = currentIndex - 1;
@@ -112,17 +110,39 @@ document.addEventListener('DOMContentLoaded', () => {
     window.openZoom = () => {
         if (photos.length === 0) return;
         const currentFilename = photos[currentIndex];
+        
         zoomImg.src = `/photos/${currentFilename}`;
+        // 每次打开重置为适应屏幕状态
+        zoomImg.classList.remove('full-scale'); 
         zoomModal.classList.add('active');
     };
 
     window.closeZoom = () => {
         zoomModal.classList.remove('active');
-        // 延迟清空，避免关闭动画时看到空白
         setTimeout(() => zoomImg.src = "", 300); 
     };
 
-    // ESC 关闭监听
+    // 点击背景关闭，点击图片不关闭
+    window.handleModalClick = (e) => {
+        // 如果点击的是图片本身，或者点击的是顶部按钮，不关闭
+        if (e.target.tagName === 'IMG' || e.target.tagName === 'BUTTON') return;
+        // 否则（点击背景黑色区域），关闭
+        window.closeZoom();
+    };
+
+    // 切换 1:1 和 适应屏幕
+    window.toggleZoomScale = (e) => {
+        // 阻止冒泡，防止触发背景关闭
+        if(e) e.stopPropagation();
+        
+        // 切换 class
+        zoomImg.classList.toggle('full-scale');
+    };
+    
+    // 点击放大图本身也可以切换缩放
+    zoomImg.onclick = window.toggleZoomScale;
+
+    // ESC 关闭
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && zoomModal.classList.contains('active')) {
             window.closeZoom();
