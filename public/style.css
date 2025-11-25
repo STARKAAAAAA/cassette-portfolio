@@ -1,17 +1,14 @@
 :root {
-    --primary-color: #ffb000; /* 经典的琥珀色 */
-    --secondary-color: #cc2900; /* 深红/橙色警告色 */
+    --primary-color: #ffb000;
+    --secondary-color: #cc2900;
     --bg-color: #121212;
-    --screen-bg: #1a1a1a;
-    --scanline-color: rgba(0, 0, 0, 0.5);
+    --screen-bg: #000000;
+    /* 扫描线改为 Z-index 10，我们把图片设为 20 */
+    --z-scanline: 10; 
     --glow: 0 0 10px var(--primary-color), 0 0 2px var(--primary-color);
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
     background-color: var(--bg-color);
@@ -23,206 +20,177 @@ body {
     text-transform: uppercase;
 }
 
-/* CRT 效果 */
+/* =========================================
+   CRT 氛围层 (中间层 Z-Index: 10)
+   ========================================= */
 .crt-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-        rgba(18, 16, 16, 0) 50%, 
-        rgba(0, 0, 0, 0.25) 50%
-    );
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
     background-size: 100% 4px;
     pointer-events: none;
-    z-index: 999;
+    z-index: 10; /* 设定为 10 */
 }
 
 .scanline {
-    width: 100%;
-    height: 10px;
-    background: rgba(255, 176, 0, 0.03);
+    width: 100%; height: 5px;
+    background: rgba(255, 176, 0, 0.02);
     position: fixed;
-    z-index: 998;
-    animation: scan 6s linear infinite;
+    z-index: 10; /* 设定为 10 */
+    animation: scan 8s linear infinite;
     pointer-events: none;
 }
+@keyframes scan { 0% { top: -10%; } 100% { top: 110%; } }
 
-@keyframes scan {
-    0% { top: -10%; }
-    100% { top: 110%; }
-}
-
-/* 布局 */
+/* =========================================
+   UI 布局
+   ========================================= */
 .interface-container {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+    display: flex; flex-direction: column; height: 100%;
+    padding: 20px; max-width: 1400px; margin: 0 auto;
+    /* 关键：移除这里的 z-index，防止它限制子元素 */
+    position: relative;
 }
 
-/* 顶部栏 */
+/* 顶部栏 - 底层 (Z < 10)，会被扫描线覆盖，保持复古感 */
 .top-bar {
-    display: flex;
-    justify-content: space-between;
+    display: flex; justify-content: space-between;
     border-bottom: 2px solid var(--primary-color);
-    padding-bottom: 10px;
-    margin-bottom: 20px;
+    padding-bottom: 10px; margin-bottom: 20px;
     text-shadow: var(--glow);
+    position: relative;
+    z-index: 5; 
 }
+.blink { animation: blinker 1s linear infinite; }
+@keyframes blinker { 50% { opacity: 0; } }
 
-.blink {
-    animation: blinker 1s linear infinite;
-}
+.main-deck { display: flex; flex: 1; gap: 20px; height: 0; }
 
-@keyframes blinker {
-    50% { opacity: 0; }
-}
-
-/* 主区域 */
-.main-deck {
-    display: flex;
-    flex: 1;
-    gap: 20px;
-    height: 0; /* Fix for flex scroll */
-}
-
-/* 左侧列表 */
+/* 左侧列表 - 底层 (Z < 10)，会被扫描线覆盖 */
 .data-bank {
-    width: 250px;
-    border: 2px solid var(--primary-color);
-    display: flex;
-    flex-direction: column;
-    background: rgba(0,0,0,0.3);
+    width: 250px; border: 2px solid var(--primary-color);
+    display: flex; flex-direction: column; background: rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 5;
 }
+.panel-header { background: var(--primary-color); color: var(--bg-color); padding: 5px 10px; font-weight: bold; }
+.file-list { list-style: none; overflow-y: auto; flex: 1; padding: 10px; }
+.file-list li { padding: 5px; cursor: pointer; border-bottom: 1px dashed #444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-list li:hover, .file-list li.active { background: var(--primary-color); color: var(--bg-color); }
+.deco-box { border-top: 2px solid var(--primary-color); padding: 10px; font-size: 0.8rem; opacity: 0.7; }
 
-.panel-header {
-    background: var(--primary-color);
-    color: var(--bg-color);
-    padding: 5px 10px;
-    font-weight: bold;
-}
-
-.file-list {
-    list-style: none;
-    overflow-y: auto;
-    flex: 1;
-    padding: 10px;
-}
-
-.file-list li {
-    padding: 5px;
-    cursor: pointer;
-    border-bottom: 1px dashed #444;
-    transition: all 0.2s;
-}
-
-.file-list li:hover, .file-list li.active {
-    background: var(--primary-color);
-    color: var(--bg-color);
-}
-
-.deco-box {
-    border-top: 2px solid var(--primary-color);
-    padding: 10px;
-    font-size: 0.8rem;
-    opacity: 0.7;
-}
-
-/* 右侧视窗 */
-.viewer-screen {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+/* =========================================
+   右侧视窗 - 顶层 (Z > 10)
+   ========================================= */
+/* 关键修改：将视窗层级设为 20，位于扫描线之上 */
+.viewer-screen { 
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 15px; 
+    position: relative;
+    z-index: 20; 
 }
 
 .screen-frame {
-    flex: 1;
-    border: 4px solid #333;
-    border-radius: 20px;
-    background: var(--screen-bg);
-    padding: 20px;
-    position: relative;
-    box-shadow: inset 0 0 20px #000;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden;
+    flex: 1; border: 4px solid #333; border-radius: 4px;
+    background: var(--screen-bg); padding: 0;
+    position: relative; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; overflow: hidden;
+    /* 确保背景是不透明的黑，这样才能挡住后面的扫描线 */
+    background-color: #000; 
 }
 
 .screen-content {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    position: relative;
 }
 
 .screen-content img {
-    max-width: 100%;
-    max-height: 100%;
-    border: 1px solid var(--primary-color);
-    box-shadow: var(--glow);
-    filter: sepia(100%) hue-rotate(-30deg) saturate(1.5) contrast(1.2); /* 模拟琥珀色单色显示器 */
-    transition: filter 0.3s;
+    max-width: 100%; max-height: 100%; object-fit: contain;
+    border: none; filter: none; box-shadow: none;
 }
 
-.screen-content img:hover {
-    filter: none; /* 悬停时显示原色 */
-}
+.glitch-text { animation: glitch 1s infinite; font-size: 1.5rem; opacity: 0.5; }
 
 .metadata-display {
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
-    text-align: right;
-    font-size: 0.9rem;
-    text-shadow: var(--glow);
-    background: rgba(0,0,0,0.8);
-    padding: 5px;
+    position: absolute; bottom: 0; right: 0;
+    text-align: right; font-size: 0.9rem;
+    background: rgba(0,0,0,0.7); color: #fff;
+    padding: 5px 10px;
 }
 
 /* 按钮 */
-.controls {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-}
-
+.controls { display: flex; justify-content: center; gap: 20px; }
 .retro-btn {
-    background: #333;
-    border: 2px solid #555;
-    border-bottom: 4px solid #111;
-    border-right: 4px solid #111;
-    color: #bbb;
-    font-family: 'VT323', monospace;
-    font-size: 1.2rem;
-    padding: 10px 30px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.1s;
+    background: #222; border: 2px solid #555; color: var(--primary-color);
+    font-family: 'VT323', monospace; font-size: 1.2rem;
+    padding: 10px 30px; cursor: pointer; text-transform: uppercase;
+}
+.retro-btn:hover { background: #333; border-color: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); }
+.retro-btn:active { background: var(--primary-color); color: var(--bg-color); }
+
+.small-btn { padding: 2px 10px; font-size: 1rem; margin-left: 10px; border: 1px solid var(--primary-color); }
+.small-btn:hover { background: var(--primary-color); color: #000; }
+
+/* =========================================
+   放大模态框 (Z-Index: 9999 - 最高)
+   ========================================= */
+.zoom-modal {
+    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.98);
+    z-index: 9999; /* 确保最高 */
+    flex-direction: column;
 }
 
-.retro-btn:active {
-    border-bottom: 2px solid #111;
-    border-right: 2px solid #111;
-    transform: translate(2px, 2px);
-    background: var(--secondary-color);
-    color: #fff;
+.zoom-modal.active { display: flex; animation: fadeIn 0.3s ease-out; }
+
+.zoom-ui-header {
+    width: 100%; padding: 15px; text-align: center;
+    color: var(--primary-color); font-size: 1.5rem;
+    background: rgba(0,0,0,0.8); border-bottom: 1px solid #333;
+    z-index: 10000;
+    display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0; 
 }
+
+/* 滚动容器 */
+.zoom-container {
+    flex: 1;
+    width: 100%;
+    overflow: auto; /* 开启滚动 */
+    display: flex;
+    /* 默认居中，当图片比屏幕大时由 flex 布局处理 */
+    padding: 20px;
+}
+
+/* 默认: 适应屏幕 */
+.zoom-container img {
+    margin: auto; /* 居中关键 */
+    max-width: 95%; max-height: 90vh;
+    border: 1px solid #333;
+    object-fit: contain;
+    filter: none;
+    cursor: zoom-in;
+    transition: none; /* 移除过渡动画以提高性能 */
+}
+
+/* 100% 模式: 强制原始尺寸 */
+.zoom-container img.full-scale {
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
+    cursor: zoom-out;
+    margin: 0 auto; /* 水平居中 */
+    /* 如果图片高度超过屏幕，flex 会让它顶部对齐，这里保持 flex 行为即可 */
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* 滚动条 */
-::-webkit-scrollbar {
-    width: 10px;
-}
-::-webkit-scrollbar-track {
-    background: #000;
-}
-::-webkit-scrollbar-thumb {
-    background: var(--primary-color);
-}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: #444; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary-color); }
+::-webkit-scrollbar-corner { background: #111; }

@@ -5,17 +5,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const metadata = document.getElementById('metadata');
     const clock = document.getElementById('clock');
     
+    // 放大功能相关 DOM
+    const zoomModal = document.getElementById('zoom-modal');
+    const zoomImg = document.getElementById('zoom-img');
+    
     let photos = [];
     let currentIndex = 0;
     let autoPlayInterval = null;
 
-    // 实时时钟
     setInterval(() => {
         const now = new Date();
         clock.innerText = now.toLocaleTimeString('en-US', { hour12: false });
     }, 1000);
 
-    // 获取照片数据
     fetch('/api/photos')
         .then(res => res.json())
         .then(data => {
@@ -23,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderList();
         })
         .catch(err => {
-            photoList.innerHTML = '<li style="color:red">ERR: CONNECTION LOST</li>';
+            console.error(err);
+            photoList.innerHTML = '<li style="color:var(--secondary-color)">ERR: CONNECTION LOST</li>';
         });
 
     function renderList() {
@@ -32,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
             photoList.innerHTML = '<li>NO DATA FOUND</li>';
             return;
         }
-
         photos.forEach((photo, index) => {
             const li = document.createElement('li');
             li.innerText = `> ${photo}`;
@@ -43,25 +45,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function loadPhoto(index) {
         if (index < 0 || index >= photos.length) return;
-        
         currentIndex = index;
         const filename = photos[index];
         
-        // 更新高亮状态
         const items = photoList.querySelectorAll('li');
         items.forEach(i => i.classList.remove('active'));
         if(items[index]) items[index].classList.add('active');
 
-        // 加载图片
         emptyState.style.display = 'none';
         mainImage.style.display = 'block';
         mainImage.src = `/photos/${filename}`;
         
-        // 模拟加载闪烁
+        // 简单闪烁
         mainImage.style.opacity = 0.5;
         setTimeout(() => mainImage.style.opacity = 1, 100);
 
-        // 更新元数据
         const imgObj = new Image();
         imgObj.src = `/photos/${filename}`;
         imgObj.onload = function() {
@@ -73,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 将函数暴露给全局以供 HTML 按钮调用
     window.prevPhoto = () => {
         let newIndex = currentIndex - 1;
         if (newIndex < 0) newIndex = photos.length - 1;
@@ -91,13 +88,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if (autoPlayInterval) {
             clearInterval(autoPlayInterval);
             autoPlayInterval = null;
-            btn.style.background = '#333';
-            btn.style.color = '#bbb';
+            btn.style.background = '#222';
+            btn.style.color = 'var(--primary-color)';
         } else {
             nextPhoto();
             autoPlayInterval = setInterval(window.nextPhoto, 3000);
             btn.style.background = 'var(--primary-color)';
-            btn.style.color = '#121212';
+            btn.style.color = 'var(--bg-color)';
         }
     };
+
+    // --- 放大与 100% 缩放逻辑 ---
+
+    window.openZoom = () => {
+        if (photos.length === 0) return;
+        const currentFilename = photos[currentIndex];
+        
+        zoomImg.src = `/photos/${currentFilename}`;
+        zoomImg.classList.remove('full-scale'); // 每次打开重置为适应屏幕
+        zoomModal.classList.add('active');
+    };
+
+    window.closeZoom = () => {
+        zoomModal.classList.remove('active');
+        setTimeout(() => zoomImg.src = "", 300); 
+    };
+
+    window.handleModalClick = (e) => {
+        // 点击图片或按钮时不关闭，点击背景关闭
+        if (e.target.tagName === 'IMG' || e.target.tagName === 'BUTTON') return;
+        window.closeZoom();
+    };
+
+    window.toggleZoomScale = (e) => {
+        if(e) e.stopPropagation();
+        // 切换 full-scale 类，CSS 会处理大小变化
+        zoomImg.classList.toggle('full-scale');
+    };
+    
+    // 点击图片本身也切换
+    zoomImg.onclick = window.toggleZoomScale;
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && zoomModal.classList.contains('active')) {
+            window.closeZoom();
+        }
+    });
 });
