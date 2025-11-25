@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VISUAL_LOG // PHOTOGRAPHY</title>
+    <!-- 引入复古字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- CRT 屏幕效果叠加层 (如果不想要扫描线，可以在CSS里隐藏) -->
+    <div class="crt-overlay"></div>
+    <div class="scanline"></div>
+
+    <div class="interface-container">
+        <!-- 顶部状态栏 -->
+        <header class="top-bar">
+            <div class="brand">SYSTEM: <span class="blink">ONLINE</span></div>
+            <div class="title">/// ARCHIVE_VISUALizer_V1.0 ///</div>
+            <div class="clock" id="clock">00:00:00</div>
+        </header>
+
+        <!-- 主内容区 -->
+        <main class="main-deck">
+            <!-- 左侧：照片列表/数据 -->
+            <aside class="data-bank">
+                <div class="panel-header">INDEX_LOADER</div>
+                <ul id="photo-list" class="file-list">
+                    <li class="loading-text">INITIALIZING...</li>
+                </ul>
+                <div class="deco-box">
+                    MEMORY: 64KB OK<br>
+                    TAPE: SIDE A
+                </div>
+            </aside>
+
+            <!-- 右侧：视窗 -->
+            <section class="viewer-screen">
+                <div class="screen-frame">
+                    <div class="screen-content">
+                        <img id="main-image" src="" alt="NO_SIGNAL" style="display:none;">
+                        <div id="empty-state" class="glitch-text">SELECT DATA TO VIEW</div>
+                    </div>
+                    <div class="metadata-display" id="metadata">
+                        FILENAME: N/A <br>
+                        RES: N/A
+                    </div>
+                </div>
+                
+                <!-- 控制按钮 -->
+                <div class="controls">
+                    <button onclick="prevPhoto()" class="retro-btn">PREV</button>
+                    <!-- 新增：放大按钮 -->
+                    <button onclick="openZoom()" class="retro-btn">MAGNIFY</button>
+                    <button onclick="toggleAuto()" class="retro-btn" id="auto-btn">AUTO_PLAY</button>
+                    <button onclick="nextPhoto()" class="retro-btn">NEXT</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 放大查看层 (默认隐藏) -->
+    <div id="zoom-modal" class="zoom-modal" onclick="closeZoom()">
+        <div class="zoom-ui-header">
+            <span>/// FULL_RES_VIEWER ///</span>
+            <span class="blink" style="margin-left: 20px;">[PRESS_ESC_TO_EXIT]</span>
+        </div>
+        <img id="zoom-img" src="" alt="ZOOM_VIEW">
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
